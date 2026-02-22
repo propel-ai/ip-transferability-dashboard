@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Novamera IP Transferability Agent — Propel Labs</title>
+  <meta name="description" content="Interactive analysis of Propel Labs' Novamera work product IP transferability across mining tech and adjacent industries." />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'IBM Plex Sans', -apple-system, sans-serif; background: #09090f; color: #e5e7eb; min-height: 100vh; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #09090f; }
+    ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+    ::selection { background: #6366f1; color: #fff; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+  <script type="text/babel">
+const { useState, useMemo } = React;
+
+// ─── DATA ───────────────────────────────────────────────────────────────────
+
+const IP_CATEGORIES = {
+  HIGH: { label: "High Transferability", color: "#22c55e", bg: "#052e16" },
+  MEDIUM: { label: "Medium Transferability", color: "#eab308", bg: "#422006" },
+  LOW: { label: "Low Transferability", color: "#f97316", bg: "#431407" },
+  LOCKED: { label: "Novamera-Locked", color: "#ef4444", bg: "#450a0a" },
+};
+
+const LEGAL_STATUS = {
+  ASSIGNED: { label: "Assigned to Novamera", icon: "🔒", color: "#ef4444" },
+  GENERIC: { label: "Potential Generic Work Product", icon: "🔓", color: "#eab308" },
+  BACKGROUND: { label: "Propel Background Tech", icon: "✅", color: "#22c55e" },
+  RENEGOTIATE: { label: "Requires MSA Renegotiation", icon: "⚠️", color: "#f97316" },
+};
+
+const INDUSTRIES = [
+  { id: "precision_mining", name: "Precision Mining", icon: "⛏️", sector: "Mining" },
+  { id: "resource_estimation", name: "Resource Estimation", icon: "📊", sector: "Mining" },
+  { id: "mine_planning", name: "Mine Planning & Optimization", icon: "🗺️", sector: "Mining" },
+  { id: "mining_services", name: "Mining Services / EPCM", icon: "🏗️", sector: "Mining" },
+  { id: "oil_gas", name: "Oil & Gas Subsurface", icon: "🛢️", sector: "Adjacent" },
+  { id: "geotechnical", name: "Geotechnical Engineering", icon: "🏔️", sector: "Adjacent" },
+  { id: "construction", name: "Construction & Infrastructure", icon: "🏛️", sector: "Adjacent" },
+  { id: "environmental", name: "Environmental Monitoring", icon: "🌍", sector: "Adjacent" },
+  { id: "defense", name: "Defense / Subsurface Detection", icon: "🎯", sector: "Adjacent" },
+  { id: "agriculture", name: "Precision Agriculture", icon: "🌾", sector: "Adjacent" },
+];
+
+const WORK_PRODUCTS = [
+  {
+    id: "geo_sim",
+    name: "Geostatistical Simulation Framework",
+    category: "Core Technology",
+    description: "Conditional simulation pipeline: truncated plurigaussian for vein boundaries + SGS for grade distribution. Sub-meter resolution (0.25m\u20131.0m), coordinate unfolding from mine coords to stratigraphic U,V,W, variogram modeling, and uncertainty quantification.",
+    transferability: "HIGH",
+    legalStatus: "RENEGOTIATE",
+    effort: "12-16 weeks to generalize",
+    revenue: "$2M\u2013$5M ARR",
+    industries: {
+      precision_mining: { fit: 95, notes: "Direct application \u2014 any selective mining operation needs sub-block uncertainty" },
+      resource_estimation: { fit: 90, notes: "Drop-in replacement for kriging-based workflows that over-smooth boundaries" },
+      mine_planning: { fit: 80, notes: "Feeds stochastic optimization; requires integration with scheduler" },
+      mining_services: { fit: 70, notes: "Consulting deliverable \u2014 run simulations as a service" },
+      oil_gas: { fit: 85, notes: "Reservoir characterization uses identical mathematical framework (SGS, variography)" },
+      geotechnical: { fit: 65, notes: "Soil/rock property simulation for foundation design under uncertainty" },
+      construction: { fit: 40, notes: "Limited \u2014 subsurface uncertainty matters only for tunneling/foundations" },
+      environmental: { fit: 60, notes: "Contaminant plume modeling, groundwater simulation" },
+      defense: { fit: 50, notes: "Subsurface anomaly detection probabilistic modeling" },
+      agriculture: { fit: 55, notes: "Soil property mapping, yield prediction from sparse samples" },
+    },
+    components: ["Variogram estimation & fitting engine","Sequential Gaussian Simulation (SGS)","Truncated Plurigaussian Simulation","Coordinate unfolding transforms","Multi-realization convergence testing","Uncertainty envelope visualization"],
+    techStack: "Julia, Python bindings",
+    novameraSpecific: "Vein geometry assumptions, radar-specific data ingestion, surgical mining selectivity coupling",
+  },
+  {
+    id: "cost_model",
+    name: "Activity-Based Cost Modeling Engine",
+    category: "Core Technology",
+    description: "Stochastic cost engine replacing fixed $/tonne. Activity-based categories (extraction, imaging, closure, processing, revenue share) integrated with block model realizations. Template system for operations baseline, convergence pre-run for instant what-if, governance controls with materiality thresholds.",
+    transferability: "HIGH",
+    legalStatus: "RENEGOTIATE",
+    effort: "8-12 weeks to generalize",
+    revenue: "$1.5M\u2013$3M ARR",
+    industries: {
+      precision_mining: { fit: 90, notes: "Direct fit \u2014 activity-based costing for any selective mining method" },
+      resource_estimation: { fit: 60, notes: "Feeds economic evaluation but not core to resource estimation itself" },
+      mine_planning: { fit: 95, notes: "Critical input \u2014 every mine plan needs cost engine; stochastic integration is differentiator" },
+      mining_services: { fit: 85, notes: "Pricing tool for service providers \u2014 bid with confidence intervals" },
+      oil_gas: { fit: 75, notes: "Well economics, field development planning under reservoir uncertainty" },
+      geotechnical: { fit: 50, notes: "Project cost estimation with geotechnical risk factors" },
+      construction: { fit: 70, notes: "Activity-based construction costing with uncertainty propagation" },
+      environmental: { fit: 45, notes: "Remediation cost estimation under contamination uncertainty" },
+      defense: { fit: 30, notes: "Limited direct application" },
+      agriculture: { fit: 35, notes: "Farm economics modeling \u2014 possible but not strong fit" },
+    },
+    components: ["Activity-based cost decomposition engine","Stochastic integration with block model realizations","Template management system","Convergence pre-computation workflow","What-if scenario comparison UI","Governance & approval workflow engine","Materiality threshold triggers"],
+    techStack: "Python, Julia integration",
+    novameraSpecific: "CCD rental rates, LDD contractor costs, Northstar V2 parameter table, surgical mining-specific activity taxonomy",
+  },
+  {
+    id: "voi",
+    name: "Value of Information (VOI) Framework",
+    category: "Core Technology",
+    description: "Quantifies marginal value of additional drilling/imaging campaigns. Links information acquisition to extraction decision quality. Competitive moat: no other mining tech company can quantify this.",
+    transferability: "HIGH",
+    legalStatus: "RENEGOTIATE",
+    effort: "10-14 weeks to generalize",
+    revenue: "$1M\u2013$3M ARR",
+    industries: {
+      precision_mining: { fit: 95, notes: "Killer app \u2014 justifies every additional data collection campaign economically" },
+      resource_estimation: { fit: 85, notes: "Optimizes drill program design, reduces over/under-drilling" },
+      mine_planning: { fit: 80, notes: "Informs phased development \u2014 when to drill more vs. start mining" },
+      mining_services: { fit: 75, notes: "Upsell tool \u2014 demonstrate value of additional services to clients" },
+      oil_gas: { fit: 90, notes: "Appraisal well decisions, seismic survey justification \u2014 established concept in O&G" },
+      geotechnical: { fit: 70, notes: "Additional site investigation value \u2014 how many more boreholes?" },
+      construction: { fit: 55, notes: "Pre-construction investigation optimization" },
+      environmental: { fit: 65, notes: "Monitoring well network optimization" },
+      defense: { fit: 60, notes: "Sensor placement optimization under uncertainty" },
+      agriculture: { fit: 50, notes: "Soil sampling optimization" },
+    },
+    components: ["Decision tree / influence diagram engine","Pre-posterior analysis computation","Information value quantification","Optimal sampling design","Campaign ROI visualization"],
+    techStack: "Julia, Python",
+    novameraSpecific: "Radar imaging cost functions, surgical mining-specific decision variables, vein geometry information linkage",
+  },
+  {
+    id: "data_pipeline",
+    name: "Automated Data Processing Pipeline",
+    category: "Platform Infrastructure",
+    description: "Event-driven processing engine handling 80%+ datasets automatically. Eliminates ~70 datasets/week backlog. Standardizes heterogeneous client file formats, column naming conventions, and quality checks.",
+    transferability: "HIGH",
+    legalStatus: "GENERIC",
+    effort: "4-6 weeks to generalize",
+    revenue: "$500K\u2013$1.5M ARR",
+    industries: {
+      precision_mining: { fit: 85, notes: "Every mining company drowns in heterogeneous sensor data" },
+      resource_estimation: { fit: 80, notes: "Drillhole data from 20 different labs, 50 different formats" },
+      mine_planning: { fit: 70, notes: "Consolidates operational data feeds" },
+      mining_services: { fit: 90, notes: "Multi-client data ingestion is the #1 pain point for service companies" },
+      oil_gas: { fit: 85, notes: "Well log, seismic, production data \u2014 same heterogeneity problem" },
+      geotechnical: { fit: 75, notes: "Lab results, field measurements, sensor streams" },
+      construction: { fit: 70, notes: "IoT sensor data, survey data, BIM data consolidation" },
+      environmental: { fit: 80, notes: "Multi-sensor environmental monitoring data streams" },
+      defense: { fit: 60, notes: "Sensor fusion from heterogeneous sources" },
+      agriculture: { fit: 65, notes: "IoT farm sensors, satellite imagery, weather data" },
+    },
+    components: ["Format detection & auto-parsing engine","Column name standardization / fuzzy matching","Event-driven S3 processing triggers","Data quality scoring & flagging","Error recovery & retry logic","Processing status dashboard"],
+    techStack: "Python, AWS Lambda, S3, SQS",
+    novameraSpecific: "Radargram file formats, Novamera-specific column conventions, LAS file handling for radar data",
+  },
+  {
+    id: "qc_validation",
+    name: "QC Validation Rule Engine",
+    category: "Platform Infrastructure",
+    description: "Automated validation for survey parameters (azimuth, inclination, depth). Configurable rule chains with tolerance bands, drift detection, and anomaly flagging. Boosts error detection from 60-70% to 95%+.",
+    transferability: "HIGH",
+    legalStatus: "GENERIC",
+    effort: "3-5 weeks to generalize",
+    revenue: "$400K\u2013$1M ARR",
+    industries: {
+      precision_mining: { fit: 90, notes: "Survey QC is universal \u2014 every mine has drillhole deviation problems" },
+      resource_estimation: { fit: 95, notes: "Data quality is the foundation; QC rules are table stakes" },
+      mine_planning: { fit: 60, notes: "Indirect \u2014 benefits from clean input data" },
+      mining_services: { fit: 85, notes: "Client data QC is the first step of every consulting engagement" },
+      oil_gas: { fit: 80, notes: "Well survey QC, log data validation \u2014 identical problem" },
+      geotechnical: { fit: 75, notes: "Lab test validation, sensor calibration checks" },
+      construction: { fit: 55, notes: "Survey instrument QC, measurement validation" },
+      environmental: { fit: 70, notes: "Sensor drift detection, calibration monitoring" },
+      defense: { fit: 50, notes: "Sensor validation, data integrity checks" },
+      agriculture: { fit: 45, notes: "Sensor calibration, data quality monitoring" },
+    },
+    components: ["Configurable rule chain engine","Tolerance band management","Drift detection algorithms","Anomaly scoring & flagging","Rule template library","Validation report generator"],
+    techStack: "Python, configurable YAML rules",
+    novameraSpecific: "Radar survey parameter tolerances, Novamera-specific validation thresholds, radargram QC criteria",
+  },
+  {
+    id: "upload_portal",
+    name: "Client Upload Centre & Project Management Portal",
+    category: "Platform Infrastructure",
+    description: "Web portal consolidating 5-7 data channels into single interface. Auto-validation on upload, project-level file tracking, 95% up-to-date file target. Role-based access, status dashboards, notification workflows.",
+    transferability: "MEDIUM",
+    legalStatus: "GENERIC",
+    effort: "6-8 weeks to generalize",
+    revenue: "$300K\u2013$800K ARR",
+    industries: {
+      precision_mining: { fit: 75, notes: "Generic portal pattern \u2014 value is in domain-specific validation rules" },
+      resource_estimation: { fit: 70, notes: "Data room for resource estimation projects" },
+      mine_planning: { fit: 65, notes: "Project data management" },
+      mining_services: { fit: 85, notes: "Multi-client data management is critical for service companies" },
+      oil_gas: { fit: 70, notes: "Well data management portals" },
+      geotechnical: { fit: 65, notes: "Site investigation data management" },
+      construction: { fit: 60, notes: "Document management \u2014 competitive market already" },
+      environmental: { fit: 55, notes: "Monitoring data portals" },
+      defense: { fit: 40, notes: "Classified data handling has different requirements" },
+      agriculture: { fit: 45, notes: "Farm data management \u2014 competitive market" },
+    },
+    components: ["Multi-channel file ingestion","Upload validation middleware","Project hierarchy management","Role-based access control","Status tracking dashboard","Notification workflow engine"],
+    techStack: "React, Python/FastAPI, AWS S3",
+    novameraSpecific: "Novamera project taxonomy, radar-specific file types, client-specific naming conventions",
+  },
+  {
+    id: "leapfrog_integration",
+    name: "Leapfrog Bidirectional API Integration",
+    category: "Integrations",
+    description: "Bidirectional API with Seequent's Leapfrog platform. Batch imports 36 radargram files per borehole, eliminates 360+ clicks per project. Model export/import automation.",
+    transferability: "LOW",
+    legalStatus: "ASSIGNED",
+    effort: "2-4 weeks (API pattern reusable)",
+    revenue: "$200K\u2013$500K ARR as add-on",
+    industries: {
+      precision_mining: { fit: 85, notes: "Leapfrog is dominant in mining \u2014 integration pattern is reusable" },
+      resource_estimation: { fit: 90, notes: "Leapfrog IS the resource estimation tool \u2014 high demand" },
+      mine_planning: { fit: 70, notes: "Data flows downstream from Leapfrog to planning tools" },
+      mining_services: { fit: 80, notes: "Service companies use Leapfrog daily \u2014 automation saves hours" },
+      oil_gas: { fit: 20, notes: "Different tools (Petrel, Kingdom) \u2014 pattern reusable, not code" },
+      geotechnical: { fit: 60, notes: "Leapfrog Works for geotech exists \u2014 smaller market" },
+      construction: { fit: 15, notes: "Different toolchain (BIM)" },
+      environmental: { fit: 30, notes: "Some Leapfrog use for contaminated site modeling" },
+      defense: { fit: 5, notes: "No Leapfrog use" },
+      agriculture: { fit: 5, notes: "No Leapfrog use" },
+    },
+    components: ["Leapfrog API client library","Batch import orchestration","File format translation layer","Conflict resolution logic","Import/export job management"],
+    techStack: "Python, Seequent Central API",
+    novameraSpecific: "Radargram-specific import logic, Novamera project structure mapping, radar file \u2192 Leapfrog object translation",
+  },
+  {
+    id: "labeling_tool",
+    name: "Analyzer Labeling & Annotation Tool",
+    category: "Integrations",
+    description: "Collaborative labeling tool for radar/geophysical data. S3 event handling for synchronization, resolves silent sync failures. Multi-user annotation with conflict resolution.",
+    transferability: "MEDIUM",
+    legalStatus: "RENEGOTIATE",
+    effort: "6-8 weeks to generalize",
+    revenue: "$300K\u2013$800K ARR",
+    industries: {
+      precision_mining: { fit: 50, notes: "Labeling pattern reusable \u2014 but radar data is niche" },
+      resource_estimation: { fit: 40, notes: "Core/photo labeling possible but different workflow" },
+      mine_planning: { fit: 20, notes: "Not directly applicable" },
+      mining_services: { fit: 45, notes: "Data annotation for consulting deliverables" },
+      oil_gas: { fit: 65, notes: "Seismic interpretation labeling \u2014 similar annotation UX patterns" },
+      geotechnical: { fit: 55, notes: "Borehole log annotation, core photo labeling" },
+      construction: { fit: 30, notes: "Inspection image annotation" },
+      environmental: { fit: 40, notes: "Sample point annotation, contamination boundary marking" },
+      defense: { fit: 70, notes: "Target annotation, sensor data labeling \u2014 strong ML training use case" },
+      agriculture: { fit: 45, notes: "Crop/soil annotation from imagery" },
+    },
+    components: ["Annotation canvas with drawing tools","Multi-user sync via S3 events","Conflict resolution engine","Label taxonomy management","Export to ML training format"],
+    techStack: "React, Python, S3 events, WebSockets",
+    novameraSpecific: "Radar-specific annotation types, vein boundary labeling conventions, Novamera label taxonomy",
+  },
+  {
+    id: "scenario_display",
+    name: "Scenario Presentation & Comparison Display",
+    category: "Decision Support",
+    description: "Interactive visualization for comparing mining scenario outcomes. Backend performance refactored for production use. Side-by-side scenario comparison, sensitivity analysis views, stakeholder presentation mode.",
+    transferability: "MEDIUM",
+    legalStatus: "RENEGOTIATE",
+    effort: "4-6 weeks to generalize",
+    revenue: "$200K\u2013$600K ARR as add-on",
+    industries: {
+      precision_mining: { fit: 85, notes: "Every mining decision involves scenario comparison" },
+      resource_estimation: { fit: 70, notes: "Resource classification scenarios, cut-off grade analysis" },
+      mine_planning: { fit: 90, notes: "Mine plan alternatives \u2014 the core use case for scenario tools" },
+      mining_services: { fit: 80, notes: "Client presentations \u2014 show alternative approaches" },
+      oil_gas: { fit: 80, notes: "Field development scenarios, well placement alternatives" },
+      geotechnical: { fit: 60, notes: "Design alternative comparison" },
+      construction: { fit: 65, notes: "Construction approach alternatives, value engineering" },
+      environmental: { fit: 55, notes: "Remediation strategy comparison" },
+      defense: { fit: 45, notes: "Mission planning alternatives" },
+      agriculture: { fit: 40, notes: "Crop rotation scenarios, input optimization" },
+    },
+    components: ["Scenario parameter management","Side-by-side comparison engine","Sensitivity tornado charts","Stakeholder presentation mode","PDF report generation"],
+    techStack: "React, D3.js, Python backend",
+    novameraSpecific: "Surgical mining-specific metrics, vein extraction scenarios, Novamera branding/presentation templates",
+  },
+  {
+    id: "slicing_optimization",
+    name: "Slicing Process R&D / Optimization",
+    category: "Research",
+    description: "Research-driven optimization of the slicing process bottleneck in surgical mining. Algorithmic improvements to extraction path planning and ore-waste boundary definition at sub-meter resolution.",
+    transferability: "LOW",
+    legalStatus: "ASSIGNED",
+    effort: "N/A \u2014 domain-locked research",
+    revenue: "Embedded in platform value",
+    industries: {
+      precision_mining: { fit: 60, notes: "Optimization algorithms may transfer \u2014 but slicing is Novamera-specific" },
+      resource_estimation: { fit: 20, notes: "Boundary definition concepts transfer loosely" },
+      mine_planning: { fit: 40, notes: "Extraction sequencing patterns may inform generic schedulers" },
+      mining_services: { fit: 25, notes: "Indirect \u2014 better slicing = better service delivery" },
+      oil_gas: { fit: 15, notes: "Some parallels to wellpath optimization" },
+      geotechnical: { fit: 10, notes: "Minimal transfer" },
+      construction: { fit: 10, notes: "Minimal transfer" },
+      environmental: { fit: 5, notes: "Not applicable" },
+      defense: { fit: 15, notes: "Path planning concepts loosely relevant" },
+      agriculture: { fit: 5, notes: "Not applicable" },
+    },
+    components: ["Extraction path planning algorithms","Ore-waste boundary optimization","Sub-meter resolution processing","Slicing geometry computation"],
+    techStack: "Julia",
+    novameraSpecific: "Entirely Novamera-specific \u2014 slicing is the core Surgical Mining\u2122 process",
+  },
+];
+
+// ─── COMPONENTS ─────────────────────────────────────────────────────────────
+
+function TransferabilityBadge({ level }) {
+  const cat = IP_CATEGORIES[level];
+  return (
+    <span style={{
+      display: "inline-block", padding: "3px 10px", borderRadius: "4px", fontSize: "11px",
+      fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase",
+      color: cat.color, background: cat.bg, border: `1px solid ${cat.color}33`,
+    }}>{cat.label}</span>
+  );
+}
+
+function LegalBadge({ status }) {
+  const s = LEGAL_STATUS[status];
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: "4px", padding: "2px 8px", borderRadius: "4px",
+      fontSize: "11px", fontWeight: 600, color: s.color, background: `${s.color}15`, border: `1px solid ${s.color}25`,
+    }}>{s.icon} {s.label}</span>
+  );
+}
+
+function FitBar({ value, small }) {
+  const h = small ? 6 : 10;
+  const color = value >= 75 ? "#22c55e" : value >= 50 ? "#eab308" : value >= 30 ? "#f97316" : "#ef4444";
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: small ? 80 : 120 }}>
+      <div style={{ flex: 1, height: h, background: "#1a1a2e", borderRadius: h/2, overflow: "hidden" }}>
+        <div style={{ width: `${value}%`, height: "100%", background: color, borderRadius: h/2, transition: "width 0.4s ease" }} />
+      </div>
+      <span style={{ fontSize: small ? 10 : 11, fontWeight: 700, color, minWidth: 28, textAlign: "right" }}>{value}%</span>
+    </div>
+  );
+}
+
+function HeatCell({ value, notes, onClick }) {
+  const color = value >= 75 ? "#22c55e" : value >= 50 ? "#eab308" : value >= 30 ? "#f97316" : "#ef4444";
+  const opacity = Math.max(0.15, value / 100 * 0.7);
+  return (
+    <td onClick={onClick} title={notes} style={{
+      padding: "6px 4px", textAlign: "center",
+      background: `${color}${Math.round(opacity * 255).toString(16).padStart(2, "0")}`,
+      color, fontWeight: 700, fontSize: "11px", cursor: "pointer",
+      borderBottom: "1px solid #1a1a2e", borderRight: "1px solid #1a1a2e", transition: "all 0.2s",
+    }}>{value}</td>
+  );
+}
+
+// ─── VIEWS ──────────────────────────────────────────────────────────────────
+
+function DashboardView({ onSelectProduct }) {
+  const totalProducts = WORK_PRODUCTS.length;
+  const highTransfer = WORK_PRODUCTS.filter(p => p.transferability === "HIGH").length;
+  const needsRenego = WORK_PRODUCTS.filter(p => p.legalStatus === "RENEGOTIATE").length;
+  const generic = WORK_PRODUCTS.filter(p => p.legalStatus === "GENERIC").length;
+  const assigned = WORK_PRODUCTS.filter(p => p.legalStatus === "ASSIGNED").length;
+  const parseRevRange = (s) => { const m = s.match(/\$([\d.]+)M/g); if (!m) return [0, 0]; const vals = m.map(v => parseFloat(v.replace("$", "").replace("M", ""))); return vals.length === 2 ? vals : [vals[0], vals[0]]; };
+  const transferable = WORK_PRODUCTS.filter(p => p.transferability === "HIGH" || p.transferability === "MEDIUM");
+  const revLow = transferable.reduce((s, p) => s + parseRevRange(p.revenue)[0], 0);
+  const revHigh = transferable.reduce((s, p) => s + parseRevRange(p.revenue)[1], 0);
+
+  return (
+    <div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", marginBottom: "24px" }}>
+        {[
+          { label: "Work Products", value: totalProducts, sub: `${highTransfer} high transferability`, color: "#22c55e" },
+          { label: "Revenue Potential", value: `$${revLow.toFixed(1)}\u2013${revHigh.toFixed(1)}M`, sub: "transferable IP ARR", color: "#818cf8" },
+          { label: "Legal Status", value: `${generic} Generic`, sub: `${needsRenego} need renegotiation`, color: "#eab308" },
+          { label: "Locked IP", value: assigned, sub: "assigned to Novamera", color: "#ef4444" },
+        ].map((card, i) => (
+          <div key={i} style={{ background: "#0d0d1a", border: "1px solid #1a1a2e", borderRadius: "8px", padding: "16px" }}>
+            <div style={{ fontSize: "11px", color: "#6b7280", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "8px" }}>{card.label}</div>
+            <div style={{ fontSize: "24px", fontWeight: 800, color: card.color, fontFamily: "'JetBrains Mono', monospace" }}>{card.value}</div>
+            <div style={{ fontSize: "11px", color: "#9ca3af", marginTop: "4px" }}>{card.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ marginBottom: "24px" }}>
+        <h3 style={{ fontSize: "13px", color: "#9ca3af", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "12px" }}>Work Product Portfolio</h3>
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          {WORK_PRODUCTS.map(p => {
+            const avgFit = Math.round(Object.values(p.industries).reduce((s, v) => s + v.fit, 0) / Object.keys(p.industries).length);
+            return (
+              <div key={p.id} onClick={() => onSelectProduct(p.id)} style={{
+                background: "#0d0d1a", border: "1px solid #1a1a2e", borderRadius: "8px", padding: "14px 16px",
+                cursor: "pointer", transition: "all 0.2s", display: "grid",
+                gridTemplateColumns: "1fr auto auto auto", alignItems: "center", gap: "16px",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = "#333"; e.currentTarget.style.background = "#111128"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "#1a1a2e"; e.currentTarget.style.background = "#0d0d1a"; }}>
+                <div>
+                  <div style={{ fontSize: "13px", fontWeight: 700, color: "#e5e7eb", marginBottom: "3px" }}>{p.name}</div>
+                  <div style={{ fontSize: "11px", color: "#6b7280" }}>{p.category} \u00b7 {p.techStack}</div>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: "10px", color: "#6b7280", marginBottom: "4px" }}>Avg Fit</div>
+                  <FitBar value={avgFit} small />
+                </div>
+                <LegalBadge status={p.legalStatus} />
+                <TransferabilityBadge level={p.transferability} />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div style={{ background: "#0d0d1a", border: "1px solid #1a1a2e", borderRadius: "8px", padding: "16px" }}>
+        <h3 style={{ fontSize: "13px", color: "#9ca3af", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "12px" }}>\u26a0\ufe0f Key Legal Findings</h3>
+        <div style={{ fontSize: "12px", color: "#d1d5db", lineHeight: 1.7 }}>
+          <p style={{ marginBottom: "10px" }}>The Propel\u2013Novamera MSA assigns <strong style={{ color: "#ef4444" }}>all Work Product to Novamera</strong> except narrow "Generic Work Product." The Generic Work Product carve-out requires: (a) general application, (b) <em>no mining-related application</em>, and (c) no Novamera Confidential Info.</p>
+          <p style={{ marginBottom: "10px" }}>Condition (b) is the critical blocker \u2014 since Propel's thesis is "AI for mining," nearly everything has mining application. Only pure infrastructure code (data pipelines, QC engines, upload portals) may qualify as Generic.</p>
+          <p style={{ marginBottom: "0" }}><strong style={{ color: "#eab308" }}>Recommendation:</strong> Renegotiate MSA to add "Propel Platform IP" category covering generalizable frameworks. Alternatively, ensure Background Technology is explicitly listed in each Development Plan before starting work.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HeatmapView({ onSelectProduct }) {
+  const [tooltip, setTooltip] = useState(null);
+  return (
+    <div style={{ overflowX: "auto" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px" }}>
+        <thead>
+          <tr>
+            <th style={{ textAlign: "left", padding: "8px 6px", color: "#6b7280", fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.5px", borderBottom: "2px solid #1a1a2e", position: "sticky", left: 0, background: "#09090f", zIndex: 1, minWidth: 160 }}>Work Product</th>
+            {INDUSTRIES.map(ind => (
+              <th key={ind.id} style={{ padding: "6px 2px", color: "#6b7280", fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.3px", borderBottom: "2px solid #1a1a2e", textAlign: "center", minWidth: 52, maxWidth: 70, whiteSpace: "normal", lineHeight: 1.2 }}>
+                <span style={{ fontSize: "14px" }}>{ind.icon}</span><br />{ind.name}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {WORK_PRODUCTS.map(p => (
+            <tr key={p.id}>
+              <td onClick={() => onSelectProduct(p.id)} style={{ padding: "8px 6px", fontWeight: 600, color: "#d1d5db", borderBottom: "1px solid #1a1a2e", cursor: "pointer", position: "sticky", left: 0, background: "#09090f", zIndex: 1, fontSize: "11px" }}>{p.name}</td>
+              {INDUSTRIES.map(ind => (
+                <HeatCell key={ind.id} value={p.industries[ind.id]?.fit || 0} notes={p.industries[ind.id]?.notes || ""} onClick={() => setTooltip(tooltip?.pid === p.id && tooltip?.iid === ind.id ? null : { pid: p.id, iid: ind.id })} />
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {tooltip && (() => {
+        const p = WORK_PRODUCTS.find(x => x.id === tooltip.pid);
+        const ind = INDUSTRIES.find(x => x.id === tooltip.iid);
+        const data = p?.industries[tooltip.iid];
+        return (
+          <div style={{ marginTop: "12px", background: "#0d0d1a", border: "1px solid #1a1a2e", borderRadius: "8px", padding: "14px" }}>
+            <div style={{ fontSize: "13px", fontWeight: 700, color: "#e5e7eb", marginBottom: "4px" }}>{ind.icon} {p.name} \u2192 {ind.name}</div>
+            <FitBar value={data.fit} />
+            <div style={{ fontSize: "12px", color: "#9ca3af", marginTop: "6px" }}>{data.notes}</div>
+          </div>
+        );
+      })()}
+    </div>
+  );
+}
+
+function ProductDetailView({ productId, onBack }) {
+  const p = WORK_PRODUCTS.find(x => x.id === productId);
+  if (!p) return null;
+  const sorted = INDUSTRIES.map(ind => ({ ...ind, ...p.industries[ind.id] })).sort((a, b) => b.fit - a.fit);
+  const mining = sorted.filter(x => x.sector === "Mining");
+  const adjacent = sorted.filter(x => x.sector === "Adjacent");
+
+  return (
+    <div>
+      <button onClick={onBack} style={{ background: "none", border: "1px solid #333", color: "#9ca3af", padding: "4px 12px", borderRadius: "4px", cursor: "pointer", fontSize: "11px", marginBottom: "16px" }}>\u2190 Back</button>
+      <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px", flexWrap: "wrap" }}>
+        <h2 style={{ fontSize: "18px", fontWeight: 800, color: "#e5e7eb", margin: 0 }}>{p.name}</h2>
+        <TransferabilityBadge level={p.transferability} />
+        <LegalBadge status={p.legalStatus} />
+      </div>
+      <div style={{ fontSize: "11px", color: "#6b7280", marginBottom: "16px" }}>{p.category} \u00b7 {p.techStack} \u00b7 {p.effort}</div>
+      <p style={{ fontSize: "12px", color: "#d1d5db", lineHeight: 1.7, marginBottom: "20px" }}>{p.description}</p>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "20px" }}>
+        <div style={{ background: "#0d0d1a", border: "1px solid #1a1a2e", borderRadius: "8px", padding: "14px" }}>
+          <h4 style={{ fontSize: "11px", color: "#6b7280", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "10px", marginTop: 0 }}>Transferable Components</h4>
+          {p.components.map((c, i) => (
+            <div key={i} style={{ fontSize: "12px", color: "#d1d5db", padding: "4px 0", borderBottom: i < p.components.length - 1 ? "1px solid #111" : "none" }}>
+              <span style={{ color: "#22c55e", marginRight: "6px" }}>\u25c6</span>{c}
+            </div>
+          ))}
+        </div>
+        <div style={{ background: "#0d0d1a", border: "1px solid #1a1a2e", borderRadius: "8px", padding: "14px" }}>
+          <h4 style={{ fontSize: "11px", color: "#6b7280", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "10px", marginTop: 0 }}>Novamera-Specific (Non-Transferable)</h4>
+          <p style={{ fontSize: "12px", color: "#ef4444", lineHeight: 1.6, margin: 0 }}>{p.novameraSpecific}</p>
+          <div style={{ marginTop: "12px", padding: "10px", background: "#111", borderRadius: "6px" }}>
+            <div style={{ fontSize: "10px", color: "#6b7280", textTransform: "uppercase", marginBottom: "4px" }}>Est. Revenue Potential</div>
+            <div style={{ fontSize: "16px", fontWeight: 800, color: "#818cf8", fontFamily: "'JetBrains Mono', monospace" }}>{p.revenue}</div>
+          </div>
+        </div>
+      </div>
+
+      <h3 style={{ fontSize: "13px", color: "#9ca3af", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "12px" }}>Industry Fit Analysis</h3>
+      {[{ label: "Mining Tech Companies", data: mining }, { label: "Adjacent Industries", data: adjacent }].map(group => (
+        <div key={group.label} style={{ marginBottom: "16px" }}>
+          <div style={{ fontSize: "11px", color: "#6b7280", marginBottom: "8px", fontWeight: 700 }}>{group.label}</div>
+          {group.data.map(ind => (
+            <div key={ind.id} style={{ display: "grid", gridTemplateColumns: "140px 140px 1fr", alignItems: "center", gap: "12px", padding: "8px 0", borderBottom: "1px solid #111" }}>
+              <div style={{ fontSize: "12px", color: "#d1d5db" }}>{ind.icon} {ind.name}</div>
+              <FitBar value={ind.fit} />
+              <div style={{ fontSize: "11px", color: "#9ca3af" }}>{ind.notes}</div>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function IndustryView() {
+  const [selectedIndustry, setSelectedIndustry] = useState(null);
+  if (selectedIndustry) {
+    const ind = INDUSTRIES.find(x => x.id === selectedIndustry);
+    const products = WORK_PRODUCTS.map(p => ({ ...p, fit: p.industries[selectedIndustry]?.fit || 0, notes: p.industries[selectedIndustry]?.notes || "" })).sort((a, b) => b.fit - a.fit);
+    const avgFit = Math.round(products.reduce((s, p) => s + p.fit, 0) / products.length);
+    const highFit = products.filter(p => p.fit >= 70).length;
+    return (
+      <div>
+        <button onClick={() => setSelectedIndustry(null)} style={{ background: "none", border: "1px solid #333", color: "#9ca3af", padding: "4px 12px", borderRadius: "4px", cursor: "pointer", fontSize: "11px", marginBottom: "16px" }}>\u2190 Back</button>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
+          <span style={{ fontSize: "28px" }}>{ind.icon}</span>
+          <div>
+            <h2 style={{ fontSize: "18px", fontWeight: 800, color: "#e5e7eb", margin: 0 }}>{ind.name}</h2>
+            <div style={{ fontSize: "11px", color: "#6b7280" }}>{ind.sector} \u00b7 {highFit} high-fit products \u00b7 Avg fit: {avgFit}%</div>
+          </div>
+        </div>
+        {products.map(p => (
+          <div key={p.id} style={{ background: "#0d0d1a", border: "1px solid #1a1a2e", borderRadius: "8px", padding: "14px 16px", marginBottom: "8px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+              <div style={{ fontSize: "13px", fontWeight: 700, color: "#e5e7eb" }}>{p.name}</div>
+              <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                <LegalBadge status={p.legalStatus} />
+                <TransferabilityBadge level={p.transferability} />
+              </div>
+            </div>
+            <FitBar value={p.fit} />
+            <div style={{ fontSize: "11px", color: "#9ca3af", marginTop: "6px" }}>{p.notes}</div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return (
+    <div>
+      {["Mining", "Adjacent"].map(sector => (
+        <div key={sector} style={{ marginBottom: "20px" }}>
+          <h3 style={{ fontSize: "13px", color: "#9ca3af", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "12px" }}>
+            {sector === "Mining" ? "\u26cf\ufe0f Mining Tech Companies" : "\ud83c\udfd7\ufe0f Adjacent Industries"}
+          </h3>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "8px" }}>
+            {INDUSTRIES.filter(i => i.sector === sector).map(ind => {
+              const avgFit = Math.round(WORK_PRODUCTS.reduce((s, p) => s + (p.industries[ind.id]?.fit || 0), 0) / WORK_PRODUCTS.length);
+              const highFit = WORK_PRODUCTS.filter(p => (p.industries[ind.id]?.fit || 0) >= 70).length;
+              return (
+                <div key={ind.id} onClick={() => setSelectedIndustry(ind.id)} style={{
+                  background: "#0d0d1a", border: "1px solid #1a1a2e", borderRadius: "8px", padding: "14px", cursor: "pointer", transition: "all 0.2s",
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "#333"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "#1a1a2e"; }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+                    <span style={{ fontSize: "20px" }}>{ind.icon}</span>
+                    <div style={{ fontSize: "13px", fontWeight: 700, color: "#e5e7eb" }}>{ind.name}</div>
+                  </div>
+                  <FitBar value={avgFit} />
+                  <div style={{ fontSize: "10px", color: "#6b7280", marginTop: "4px" }}>{highFit} products with \u226570% fit</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function StrategyView() {
+  return (
+    <div style={{ fontSize: "12px", color: "#d1d5db", lineHeight: 1.8 }}>
+      <div style={{ background: "#0d0d1a", border: "1px solid #1a1a2e", borderRadius: "8px", padding: "16px", marginBottom: "16px" }}>
+        <h3 style={{ fontSize: "14px", color: "#818cf8", marginTop: 0, marginBottom: "10px" }}>1. Immediate Actions (Next 30 Days)</h3>
+        <div style={{ marginBottom: "10px" }}>
+          <strong style={{ color: "#22c55e" }}>Renegotiate MSA Generic Work Product Definition</strong>
+          <p style={{ margin: "4px 0 0" }}>Add "Propel Platform IP" category for generalizable frameworks. Current condition (b) \u2014 "no mining-related application" \u2014 blocks retention of your most valuable transferable IP.</p>
+        </div>
+        <div style={{ marginBottom: "10px" }}>
+          <strong style={{ color: "#22c55e" }}>Document Background Technology</strong>
+          <p style={{ margin: "4px 0 0" }}>Before starting any new Development Plan, explicitly list all pre-existing frameworks as Background Technology. This is your legal shield.</p>
+        </div>
+        <div>
+          <strong style={{ color: "#22c55e" }}>Architect for Separation</strong>
+          <p style={{ margin: "4px 0 0" }}>Ensure every new component has clean separation between generic engine and Novamera-specific configuration.</p>
+        </div>
+      </div>
+
+      <div style={{ background: "#0d0d1a", border: "1px solid #1a1a2e", borderRadius: "8px", padding: "16px", marginBottom: "16px" }}>
+        <h3 style={{ fontSize: "14px", color: "#818cf8", marginTop: 0, marginBottom: "10px" }}>2. Platform Packaging (60\u201390 Days)</h3>
+        <div style={{ marginBottom: "10px" }}>
+          <strong style={{ color: "#eab308" }}>Tier 1: Data Infrastructure Platform \u2014 $2-4M ARR</strong>
+          <p style={{ margin: "4px 0 0" }}>Bundle: Data Pipeline + QC Validation + Upload Portal. Lowest legal risk. Target: Mining services, environmental consultancies, O&G data management.</p>
+        </div>
+        <div style={{ marginBottom: "10px" }}>
+          <strong style={{ color: "#eab308" }}>Tier 2: Subsurface Intelligence Platform \u2014 $4-8M ARR</strong>
+          <p style={{ margin: "4px 0 0" }}>Bundle: Geostatistical Simulation + VOI + Cost Model + Scenario Display. Highest value, requires MSA renegotiation. Target: Resource estimation firms, O&G reservoir engineering.</p>
+        </div>
+        <div>
+          <strong style={{ color: "#eab308" }}>Tier 3: Decision Support Toolkit \u2014 $1-2M ARR</strong>
+          <p style={{ margin: "4px 0 0" }}>Bundle: Scenario Comparison + Cost Model (industry-agnostic) + Labeling Tool. Target: Any capital-intensive project planning.</p>
+        </div>
+      </div>
+
+      <div style={{ background: "#0d0d1a", border: "1px solid #1a1a2e", borderRadius: "8px", padding: "16px", marginBottom: "16px" }}>
+        <h3 style={{ fontSize: "14px", color: "#818cf8", marginTop: 0, marginBottom: "10px" }}>3. Strategic Beachheads (90\u2013180 Days)</h3>
+        <div style={{ marginBottom: "10px" }}>
+          <strong style={{ color: "#f97316" }}>Highest-Value: Oil & Gas</strong>
+          <p style={{ margin: "4px 0 0" }}>Geostatistical simulation is mathematically identical to reservoir characterization. O&G pays 5-10\u00d7 mining for equivalent software.</p>
+        </div>
+        <div style={{ marginBottom: "10px" }}>
+          <strong style={{ color: "#f97316" }}>Fastest Revenue: Mining Services</strong>
+          <p style={{ margin: "4px 0 0" }}>SRK, WSP, Golder already need these exact tools. Lower ASP but faster sales cycle.</p>
+        </div>
+        <div>
+          <strong style={{ color: "#f97316" }}>Wildcard: Defense / Subsurface Detection</strong>
+          <p style={{ margin: "4px 0 0" }}>Labeling tool + simulation for subsurface anomaly detection. High contract values.</p>
+        </div>
+      </div>
+
+      <div style={{ background: "#0d0d1a", border: "1px solid #ef444433", borderRadius: "8px", padding: "16px" }}>
+        <h3 style={{ fontSize: "14px", color: "#ef4444", marginTop: 0, marginBottom: "10px" }}>\u26a0\ufe0f Critical Risks</h3>
+        <div style={{ marginBottom: "8px" }}><strong>Dual-role governance:</strong> CEO (Propel) + CTO (Novamera) creates fiduciary tension. IP retention must be defensible.</div>
+        <div style={{ marginBottom: "8px" }}><strong>Retroactive assignment:</strong> IP already developed under current MSA may already be assigned.</div>
+        <div><strong>Client relationship:</strong> Novamera is anchor client. Renegotiation must be positioned as enabling better service.</div>
+      </div>
+    </div>
+  );
+}
+
+// ─── MAIN APP ───────────────────────────────────────────────────────────────
+
+const TABS = [
+  { id: "dashboard", label: "Dashboard" },
+  { id: "heatmap", label: "Heatmap" },
+  { id: "industries", label: "Industries" },
+  { id: "strategy", label: "Strategy" },
+];
+
+function App() {
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const handleSelectProduct = (id) => { setSelectedProduct(id); setActiveTab("detail"); };
+
+  return (
+    <div style={{ fontFamily: "'IBM Plex Sans', -apple-system, sans-serif", background: "#09090f", color: "#e5e7eb", minHeight: "100vh", padding: "24px" }}>
+      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+        <div style={{ marginBottom: "24px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "4px" }}>
+            <div style={{ width: 32, height: 32, borderRadius: "6px", background: "linear-gradient(135deg, #818cf8, #6366f1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontWeight: 800, color: "#fff" }}>IP</div>
+            <h1 style={{ fontSize: "20px", fontWeight: 800, color: "#e5e7eb", margin: 0 }}>Novamera IP Transferability Agent</h1>
+          </div>
+          <p style={{ fontSize: "12px", color: "#6b7280", margin: "4px 0 0 42px" }}>
+            Analyzing {WORK_PRODUCTS.length} work products across {INDUSTRIES.length} target industries \u00b7 Propel Labs \u2192 Market Opportunity
+          </p>
+        </div>
+
+        <div style={{ display: "flex", gap: "2px", marginBottom: "20px", background: "#0d0d1a", borderRadius: "8px", padding: "3px", border: "1px solid #1a1a2e" }}>
+          {TABS.map(tab => (
+            <button key={tab.id} onClick={() => { setActiveTab(tab.id); setSelectedProduct(null); }} style={{
+              flex: 1, padding: "8px 16px", border: "none", borderRadius: "6px", fontSize: "12px", fontWeight: 600, cursor: "pointer", transition: "all 0.2s",
+              background: activeTab === tab.id ? "#1a1a2e" : "transparent", color: activeTab === tab.id ? "#e5e7eb" : "#6b7280",
+            }}>{tab.label}</button>
+          ))}
+        </div>
+
+        {activeTab === "dashboard" && <DashboardView onSelectProduct={handleSelectProduct} />}
+        {activeTab === "heatmap" && <HeatmapView onSelectProduct={handleSelectProduct} />}
+        {activeTab === "industries" && <IndustryView />}
+        {activeTab === "strategy" && <StrategyView />}
+        {activeTab === "detail" && selectedProduct && <ProductDetailView productId={selectedProduct} onBack={() => setActiveTab("dashboard")} />}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
