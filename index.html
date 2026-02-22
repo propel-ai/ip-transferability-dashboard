@@ -16,6 +16,47 @@
   </style>
 </head>
 <body>
+  <!-- Password Gate -->
+  <div id="auth-gate" style="display:none; position:fixed; inset:0; z-index:9999; background:#09090f; align-items:center; justify-content:center;">
+    <div style="text-align:center; max-width:360px; padding:2rem;">
+      <div style="font-family:'JetBrains Mono',monospace; font-size:0.75rem; letter-spacing:0.15em; text-transform:uppercase; color:#6366f1; margin-bottom:1.5rem;">Propel Labs · Confidential</div>
+      <h1 style="font-family:'IBM Plex Sans',sans-serif; font-size:1.25rem; font-weight:600; color:#e5e7eb; margin-bottom:1.5rem;">Novamera IP Transferability Agent</h1>
+      <form id="auth-form" style="display:flex; flex-direction:column; gap:0.75rem;">
+        <input id="auth-input" type="password" placeholder="Enter password" autocomplete="off"
+          style="font-family:'IBM Plex Sans',sans-serif; font-size:0.95rem; padding:0.65rem 1rem; border-radius:8px; border:1px solid #333; background:#16161e; color:#e5e7eb; outline:none; text-align:center;"
+          onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#333'" />
+        <button type="submit"
+          style="font-family:'IBM Plex Sans',sans-serif; font-size:0.9rem; font-weight:600; padding:0.65rem 1rem; border-radius:8px; border:none; background:#6366f1; color:#fff; cursor:pointer;">
+          Access Dashboard
+        </button>
+        <div id="auth-error" style="color:#ef4444; font-size:0.8rem; display:none;">Incorrect password</div>
+      </form>
+    </div>
+  </div>
+  <script>
+    (function() {
+      var HASH = 'acfd2f0a24468aac5c840c0586ffe18ffeb74d622e959870372911f9f1283e21';
+      var gate = document.getElementById('auth-gate');
+      var root = document.getElementById('root');
+      if (sessionStorage.getItem('ip-dash-auth') === 'true') { gate.style.display = 'none'; return; }
+      gate.style.display = 'flex';
+      root.style.display = 'none';
+      document.getElementById('auth-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        var pw = document.getElementById('auth-input').value;
+        var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
+        var hash = Array.from(new Uint8Array(buf)).map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
+        if (hash === HASH) {
+          sessionStorage.setItem('ip-dash-auth', 'true');
+          gate.style.display = 'none';
+          root.style.display = '';
+        } else {
+          document.getElementById('auth-error').style.display = 'block';
+          document.getElementById('auth-input').value = '';
+        }
+      });
+    })();
+  </script>
   <div id="root"></div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
